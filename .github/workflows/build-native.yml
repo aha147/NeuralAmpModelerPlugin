@@ -76,6 +76,40 @@ jobs:
         ./makedist-mac.sh full zip
       shell: bash
 
+    - name: Validate AU plugin (macOS)
+      if: matrix.os == 'macos-latest'
+      timeout-minutes: 5
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        AU_BUNDLE="$HOME/Library/Audio/Plug-Ins/Components/NeuralAmpModeler.component"
+
+        if [[ ! -d "$AU_BUNDLE" ]]; then
+          echo "::error::AU plugin not found at $AU_BUNDLE"
+          exit 1
+        fi
+
+        PLIST="$AU_BUNDLE/Contents/Info.plist"
+        AU_TYPE=$(/usr/libexec/PlistBuddy -c "Print :AudioComponents:0:type" "$PLIST")
+        AU_SUBTYPE=$(/usr/libexec/PlistBuddy -c "Print :AudioComponents:0:subtype" "$PLIST")
+        AU_MANUFACTURER=$(/usr/libexec/PlistBuddy -c "Print :AudioComponents:0:manufacturer" "$PLIST")
+
+        echo "Validating AU: $AU_TYPE $AU_SUBTYPE $AU_MANUFACTURER"
+
+        killall -u "$(id -un)" AudioComponentRegistrar || true
+
+        /usr/bin/auval -v "$AU_TYPE" "$AU_SUBTYPE" "$AU_MANUFACTURER" \
+          2>&1 | tee "$RUNNER_TEMP/auval.log"
+
+    - name: Upload AU validation log
+      if: always() && matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: auval-log
+        path: ${{ runner.temp }}/auval.log
+        if-no-files-found: ignore
+
     - name: Validate VST3 bundle (macOS)
       if: matrix.os == 'macOS-latest'
       run: |
