@@ -18,9 +18,9 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [macos-26-intel, windows-latest]
         include:
-          - os: macos-latest
+          - os: macos-26-intel
             build_dir: build-mac
             artifact_ext: mac
           - os: windows-latest
@@ -46,7 +46,7 @@ jobs:
       shell: bash
 
     - name: Build Steinberg validator (macOS)
-      if: matrix.os == 'macOS-latest'
+      if: runner.os == 'macOS'
       run: |
         git clone --depth=1 https://github.com/steinbergmedia/vst3sdk.git "$RUNNER_TEMP/vst3sdk"
         cd "$RUNNER_TEMP/vst3sdk"
@@ -70,14 +70,14 @@ jobs:
       shell: pwsh
 
     - name: Build macOS
-      if: matrix.os == 'macOS-latest'
+      if: runner.os == 'macOS'
       run: |
         cd ${{env.PROJECT_NAME}}/scripts
         ./makedist-mac.sh full zip
       shell: bash
 
     - name: Validate AU plugin (macOS)
-      if: matrix.os == 'macos-latest'
+      if: runner.os == 'macos'
       timeout-minutes: 5
       shell: bash
       run: |
@@ -103,7 +103,7 @@ jobs:
           2>&1 | tee "$RUNNER_TEMP/auval.log"
 
     - name: Upload AU validation log
-      if: always() && matrix.os == 'macos-latest'
+      if: always() && runner.os == 'macos'
       uses: actions/upload-artifact@v4
       with:
         name: auval-log
@@ -111,7 +111,7 @@ jobs:
         if-no-files-found: ignore
 
     - name: Validate VST3 bundle (macOS)
-      if: matrix.os == 'macOS-latest'
+      if: runner.os == 'macOS'
       run: |
         "$RUNNER_TEMP/vst3sdk/VST3_BUILD/bin/validator" "$HOME/Library/Audio/Plug-Ins/VST3/NeuralAmpModeler.vst3"
       shell: bash
