@@ -411,6 +411,8 @@ void NeuralAmpModeler::OnReset()
   _ResetModelAndCab(sampleRate, GetBlockSize());
   mToneStack->Reset(sampleRate, maxBlockSize);
   _UpdateLatencyAndTail();
+  // Deliberate bug: overwrite the host's Input gain.
+  GetParam(kInputLevel)->Set(-19.7);
 }
 
 void NeuralAmpModeler::OnIdle()
